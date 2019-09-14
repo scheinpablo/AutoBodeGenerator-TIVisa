@@ -51,15 +51,17 @@ class UIConfigMeas(QMainWindow):
 
     def continue_action(self):
         error = False
+
         self.update_labels()
+        meas_configuration = {
+            "sweepType": self.sweep_type.value,
+            "measureTick": self.measure_every,
+            "establishmentTime": self.establishmentSpinBox.value()
+        }
         if self.sweep_type == SweepTypes.linearSweep:
             if self.measure_every > (self.stop_freq - self.start_freq):
                 error = True
-                meas_configuration = {
-                    "sweepType": self.sweep_type.value,
-                    "measureTick": self.measure_every,
-                    "establishmentTime": self.establishmentSpinBox.value()
-                }
+
             elif self.sweep_type == SweepTypes.logarithmicSweep:
                 meas_configuration = {
                     "sweepType": self.sweep_type.value,
