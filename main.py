@@ -1,7 +1,6 @@
-import visa
 from PyQt5 import QtWidgets
 
-from UIManagement.mainWindow import UIMainWindow
+from MainUI.mainWindow import UIMainWindow
 
 # resources = visa.ResourceManager('@py')
 
