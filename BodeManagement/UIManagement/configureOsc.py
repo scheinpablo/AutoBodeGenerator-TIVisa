@@ -8,7 +8,7 @@ class UIConfigOsc(QMainWindow):
 
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
-        loadUi('UIManagement/configureOsc.ui', self)
+        loadUi('BodeManagement/UIManagement/configureOsc.ui', self)
         self.setWindowTitle("Oscilloscope Configuration")
         self.continueButton.clicked.connect(self.continue_action)
         self.backButton.clicked.connect(self.back_action)

@@ -8,7 +8,7 @@ class UIConfigMeas(QMainWindow):
 
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
-        loadUi('UIManagement/configureMeasurement.ui', self)
+        loadUi('BodeManagement/UIManagement/configureMeasurement.ui', self)
         self.setWindowTitle("Measurement Configuration")
         self.continueButton.clicked.connect(self.continue_action)
         self.backButton.clicked.connect(self.back_action)
@@ -43,8 +43,7 @@ class UIConfigMeas(QMainWindow):
             self.measure_every = self.measureSpinBox.value() * self.multipliers[self.measMultiplier.currentText()]
         elif self.sweep_type == SweepTypes.logarithmicSweep:
             self.measureTitleLabel.setText("Measurements per decade")
-            self.measurement_per_decade = self.measureSpingBox.value() * self.multipliers[
-                self.measMultiplier.currentText()]
+            self.measurement_per_decade = self.measureSpinBox.value()
 
     def back_action(self):
         self.bode_manager.show_prev_window()
@@ -62,12 +61,12 @@ class UIConfigMeas(QMainWindow):
             if self.measure_every > (self.stop_freq - self.start_freq):
                 error = True
 
-            elif self.sweep_type == SweepTypes.logarithmicSweep:
-                meas_configuration = {
-                    "sweepType": self.sweep_type.value,
-                    "measureTick": self.measurement_per_decade,
-                    "establishmentTime": self.establishmentSpinBox.value()
-                }
+        elif self.sweep_type == SweepTypes.logarithmicSweep:
+            meas_configuration = {
+                "sweepType": self.sweep_type.value,
+                "measureTick": self.measurement_per_decade,
+                "establishmentTime": self.establishmentSpinBox.value()
+            }
         if error:
             self.errorLabel.setText("Invalid measuring step")
         else:

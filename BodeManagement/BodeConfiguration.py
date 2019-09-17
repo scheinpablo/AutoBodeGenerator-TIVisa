@@ -5,7 +5,7 @@ import time
 from BodeManagement.UIManagement.configureMeasurement import UIConfigMeas, SweepTypes
 from BodeManagement.UIManagement.configureOsc import UIConfigOsc, ChannelTypes
 from BodeManagement.UIManagement.configureWaveGen import UIConfigWaveGen, WaveFormTypes
-from BodeManagement.UIManagement.graphpreview import UIGraphPreview
+from graphpreview import UIGraphPreview
 
 
 class BodeConfiguration:
@@ -87,8 +87,9 @@ class BodeManager:
 
         rm = visa.ResourceManager()
         # Connection
-        SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
         SCPI_33220 = rm.open_resource(visa_wave_gen)
+        SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
+
         idn = SCPI_33220.query('*IDN?')
         string = SCPI_InfiniiVision6000.query('*IDN?')
 
@@ -104,10 +105,11 @@ class BodeManager:
 
         # Time and trigger
         SCPI_InfiniiVision6000.write(':TIMebase:MODE %s' % ('MAIN'))
-        SCPI_InfiniiVision6000.write(':TRIGger:SWEep %s' % ('NORMal'))
-        SCPI_InfiniiVision6000.write(':TRIGger:EDGE:SOURce %s' % ('HRESolution'))
-        SCPI_InfiniiVision6000.write(':ACQuire:TYPE %s' % ('NORMal'))
+        SCPI_InfiniiVision6000.write(':TRIGger:SWEep %s' % ('AUTO'))
+        SCPI_InfiniiVision6000.write(':TRIGger:EDGE:SOURce %s' % ('EXTernal'))
+        SCPI_InfiniiVision6000.write(':ACQuire:TYPE %s' % ('HRESolution'))
         SCPI_InfiniiVision6000.write(':TIMebase:MAIN:DELay %G' % (0.0))
+        SCPI_InfiniiVision6000.write(':TRIGger:EDGE:LEVel %G V' % (0.1))
 
         # Measurement activation
         SCPI_InfiniiVision6000.write(':MEASure:PHASe %s,%s' % (channel_2, channel_1))
@@ -126,27 +128,58 @@ class BodeManager:
         SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (second_channel_n_, current_second_range))
 
         if sweep_type == SweepTypes.linearSweep.value:
-            for freq in range(start_freq, stop_freq, measure_tick):
+            for freq in numpy.arange(start_freq, stop_freq, measure_tick):
                 # Signal application
                 self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2, current_first_range,
                              current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
                              wave_form)
         elif sweep_type == SweepTypes.logarithmicSweep.value:
-            base = 10
-            initial_value = start_freq
-            while base < (stop_freq - start_freq):
-                for freq in numpy.logspace(initial_value, base, measure_tick, base=10, dtype='int'):
+            base = 1
+            inibase = base
+            mult = 10
+            iniexp = 0
+
+            # buscar base inicial mas cercana a startfreq
+            while base < start_freq:
+                base *= mult
+                iniexp += 1
+                inibase = base
+
+            endexp = 0
+            # buscar base final mas cercana a stopfreq
+            base = 1
+            endbase = base
+            while base < stop_freq:
+                endbase = base
+                base *= mult
+                endexp += 1
+            endexp -= 1
+
+            # medir entre atartfrq y base inicial mas cercana
+            if inibase > start_freq:
+                for freq in range(start_freq, inibase, int((inibase - start_freq) / int(measure_tick))):
                     self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
                                  current_first_range,
                                  current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
                                  wave_form)
-                initial_value = base
-                base *= 10
-            for freq in numpy.logspace(initial_value, stop_freq, measure_tick, base=10, dtype='int'):
-                self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
-                             current_first_range,
-                             current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
-                             wave_form)
+
+            # medir entre base inicial y base final
+            while iniexp < endexp:
+                for freq in numpy.logspace(iniexp, iniexp + 1, int(measure_tick), base=10, dtype='int'):
+                    self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                 current_first_range,
+                                 current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
+                                 wave_form)
+                iniexp += 1
+
+            # medir entre base final mas cercana y stop freq
+
+            if endbase < stop_freq:
+                for freq in range(endbase, stop_freq, int((stop_freq - endbase) / int(measure_tick))):
+                    self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                 current_first_range,
+                                 current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
+                                 wave_form)
 
         SCPI_InfiniiVision6000.close()
         SCPI_33220.close()
@@ -162,18 +195,28 @@ class BodeManager:
             SCPI_33220.write(':APPLy: SQUare %G,%G,%G' % (freq, amplitude, 0.0))
         elif wave_form == WaveFormTypes.triangleWave.value:
             SCPI_33220.write(':APPLy: RAMP %G,%G,%G' % (freq, amplitude, 0.0))
-
-        # vertical scale
-        vpp_in = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP %s' % (channel_1))
-        vpp_out = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP %s' % (channel_2))
-        while vpp_in >= 0.9 * current_first_range:
-            current_first_range -= 1.1 * current_first_range
-            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (first_channel_n_, current_first_range))
-        while vpp_out >= 0.9 * current_second_range:
-            current_second_range -= 1.1 * current_second_range
-            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (second_channel_n_, current_second_range))
         # Time scale configuration deppending on frequency
         SCPI_InfiniiVision6000.write(':TIMebase:MAIN:SCALe %G' % (1 / (5 * freq)))
+        # vertical scale
+        time.sleep(0.2)
+        temp_values = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP? %s' % (channel_1))
+        vpp_in = temp_values[0]
+        temp_values2 = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP? %s' % (channel_2))
+        vpp_out = temp_values2[0]
+
+        while vpp_in >= 0.9 * current_first_range:
+            current_first_range = 1.1 * current_first_range
+            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (first_channel_n_, current_first_range))
+            time.sleep(0.2)
+            temp_values = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP? %s' % (channel_1))
+            vpp_in = temp_values[0]
+        while vpp_out >= 0.9 * current_second_range:
+            current_second_range = 1.1 * current_second_range
+            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (second_channel_n_, current_second_range))
+            time.sleep(0.2)
+            temp_values2 = SCPI_InfiniiVision6000.query_ascii_values(':MEASure:VPP? %s' % (channel_2))
+            vpp_out = temp_values2[0]
+
         # Establishment time before measuring
         time.sleep(establishment_time / 1000)
         # Measurement
@@ -184,4 +227,3 @@ class BodeManager:
             ':MEASure:PHASe? %s,%s' % (channel_2, channel_1))
         self.phase_measurements.append(temp_values2[0])
         self.frequencies.append(freq)
-

@@ -7,7 +7,7 @@ from PyQt5.uic import loadUi
 class UIConfigWaveGen(QMainWindow):
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
-        loadUi('UIManagement/configureWaveGen.ui', self)
+        loadUi('BodeManagement/UIManagement/configureWaveGen.ui', self)
         self.setWindowTitle("Wave Generator Configuration")
         self.backButton.clicked.connect(self.back_action)
         self.continueButton.clicked.connect(self.continue_action)

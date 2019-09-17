@@ -21,13 +21,12 @@ class GraphWidget(QWidget):
         self.title = " "
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)  # Canvas a agregar al widget
-        self.toolbar = NavigationToolbar(self.canvas, self)  # cada gráfico tiene un toolbar con herramientos para
+
         # trabajar sobre él
 
         vertical_layout = QVBoxLayout()
 
         vertical_layout.addWidget(self.canvas)  # Se le agrega el canvas al widget
-        vertical_layout.addWidget(self.toolbar)  # Se le agrega el toolbar al widget
 
         #
         self.canvas.axes = self.canvas.figure.add_subplot(111)  # Plotea el canvas. Si no se entiende que es el ploteo,

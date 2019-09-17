@@ -4,19 +4,21 @@ from tkinter import filedialog
 import numpy
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
+from PyQt5.QtWidgets import *
 import matplotlib as mpl
+import csv
 
 
 class UIGraphPreview(QMainWindow):
 
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
-        loadUi('UIManagement/graphpreview.ui', self)
+        loadUi('D:\PycharmProjects\TCVisa\graphpreview.ui', self)
         self.setWindowTitle("Graph Preview")
         self.ModuleWidget = self.graphwidget  # Objeto de la clase GraphWidget
         self.PhaseWidget = self.phaseGraph  # Objeto de la clase GraphWidget
-        self.ModuleWidget.title = "Módulo"
-        self.PhaseWidget.title = "Fase"
+        self.ModuleWidget.title = "Module"
+        self.PhaseWidget.title = "Phase"
         self.ModuleWidget.x_label = "f [Hz]"
         self.PhaseWidget.x_label = "f [Hz]"
         self.PhaseWidget.y_label = "° [deg]"
@@ -27,8 +29,12 @@ class UIGraphPreview(QMainWindow):
         self.__fix_axes_titles_position__(self.ModuleWidget)
         self.__fix_axes_titles_position__(self.PhaseWidget)
         self.bode_manager = bode_manager
-        self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.module, self.ModuleWidget)
-        self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.phase, self.PhaseWidget)
+
+    def plot_window(self):
+        self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.module,
+                            self.ModuleWidget)
+        self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.phase,
+                            self.PhaseWidget)
 
     # Funciones que configuran y muestran los titulos de los ejes.
     def __fix_axes_titles_position__(self, widget):
@@ -52,23 +58,35 @@ class UIGraphPreview(QMainWindow):
     def __plot_graph__(self, x_values, y_values, graph_widget):
 
         graph_widget.canvas.axes.plot(x_values,  # Función principal que setea los gráficos a escala
-                                      y_values  # logarítmica con los valores indicados en los arrays.
-                                      )
+                                      y_values,  # logarítmica con los valores indicados en los arrays.
+                                      color='b', label='Best objective value')
+        graph_widget.canvas.axes.set_xscale('log')
+        graph_widget.canvas.axes.grid(True, which="both")
 
         graph_widget.canvas.draw()  # redibuja
 
     def save_action(self):
-        a = numpy.asarray(self.bode_manager.bode.frequencies, self.bode_manager.bode.module, self.bode_manager.bode.phase)
-        folder_path = filedialog.askdirectory()
-        self.save_csv(folder_path, a, "autoMeas")
 
-    def save_csv(self, folder_path, file, name):
+        myData = [['freqs', 'amp', 'phase']]
+
+        for i in range(0, len(self.bode_manager.bode.frequencies)):
+            myData.append([str(self.bode_manager.bode.frequencies[i]),
+                           str(self.bode_manager.bode.module[i]),
+                           str(self.bode_manager.bode.phase[i])])
+
+        folder_path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        self.save_csv(folder_path, myData, "auto_bode")
+        self.errorLabel.setText("Mediciones guardadas.")
+
+    def save_csv(self, folder_path, myData, name):
         i = 1
         if os.path.isfile(folder_path + "/" + name + ".csv"):
             while os.path.isfile(folder_path + "/" + name + "(" + str(i) + ").csv"):
                 i = i + 1
-            numpy.savetxt(folder_path + "/" + name + "(" + str(i) + ").csv", file, delimiter=",")
-            return folder_path + "/" + name + "(" + str(i) + ").csv"
+            myFile = open(folder_path + "/" + name + "(" + str(i) + ").csv", 'w')
         else:
-            numpy.savetxt(folder_path + "/" + name + ".csv", file, delimiter=",")
-            return folder_path + "/" + name + ".csv"
+            myFile = open(folder_path + "/" + name + ".csv", 'w')
+
+        with myFile:
+            writer = csv.writer(myFile)
+            writer.writerows(myData)
