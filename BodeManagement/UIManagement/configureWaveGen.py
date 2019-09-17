@@ -5,7 +5,7 @@ from PyQt5.uic import loadUi
 
 
 class UIConfigWaveGen(QMainWindow):
-    def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
+    def __init__(self, bode_manager, visa_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
         loadUi('BodeManagement/UIManagement/configureWaveGen.ui', self)
         self.setWindowTitle("Wave Generator Configuration")
@@ -24,6 +24,12 @@ class UIConfigWaveGen(QMainWindow):
         self.stop_freq = 0
         self.amplitude = 0
         self.bode_manager = bode_manager
+        self.visa_manager = visa_manager
+        rm = self.visa_manager.get_resource_manager()
+        instrument_list = self.visa_manager.get_list_of_detailed_instruments()
+
+        for instrument in instrument_list:
+            self.visaStringWave.addItem(instrument.idnString)
 
     def back_action(self):
         self.bode_manager.show_prev_window()
@@ -31,7 +37,7 @@ class UIConfigWaveGen(QMainWindow):
     def continue_action(self):
         error = False
         # get visa string
-        self.visa_string = self.visaStringWave.toPlainText()
+        self.visa_string = self.visa_manager.get_visa_from_idn(self.visaStringWave.currentText())
 
         self.start_freq = int(round(self.startFreqBox.value() * self.multipliers[self.startFreqMult.currentText()],0))
         self.stop_freq = int(round(self.stopFreqBox.value() * self.multipliers[self.stopFreqMult.currentText()],0))

@@ -1,10 +1,10 @@
 import numpy
 import pyvisa as visa
 import time
-
 from BodeManagement.UIManagement.configureMeasurement import UIConfigMeas, SweepTypes
 from BodeManagement.UIManagement.configureOsc import UIConfigOsc, ChannelTypes
 from BodeManagement.UIManagement.configureWaveGen import UIConfigWaveGen, WaveFormTypes
+from BodeManagement.VisaManagement import VisaManager
 from graphpreview import UIGraphPreview
 
 
@@ -29,8 +29,9 @@ class BodeManager:
         self.frequencies = []
         self.phase_measurements = []
         self.ratio_measurements = []
-        self.config_osc_window = UIConfigOsc(self)
-        self.config_wave_window = UIConfigWaveGen(self)
+        self.visa_manager = VisaManager()
+        self.config_osc_window = UIConfigOsc(self, self.visa_manager)
+        self.config_wave_window = UIConfigWaveGen(self, self.visa_manager)
         self.config_meas_window = UIConfigMeas(self)
         self.window_sequence = [self.config_osc_window, self.config_wave_window, self.config_meas_window]
         self.bode_configuration = BodeConfiguration()
@@ -53,6 +54,8 @@ class BodeManager:
             self.bode = self.measure_bode(conf_osc, conf_wave, conf_meas)
             self.window_sequence[self.iterator].close()
             self.graph_prev_window = UIGraphPreview(self)
+            self.graph_prev_window.show()
+            self.graph_prev_window.plot_window()
 
     def show_prev_window(self):
         if self.iterator > 0:
@@ -85,13 +88,12 @@ class BodeManager:
                 second_channel_n_ = i
             i += 1
 
-        rm = visa.ResourceManager()
+        rm = self.visa_manager.get_resource_manager()
+
         # Connection
         SCPI_33220 = rm.open_resource(visa_wave_gen)
-        SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
 
-        idn = SCPI_33220.query('*IDN?')
-        string = SCPI_InfiniiVision6000.query('*IDN?')
+        SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
 
         # Oscilloscope Configuration
         SCPI_InfiniiVision6000.write('*RST')
@@ -222,8 +224,9 @@ class BodeManager:
         # Measurement
         temp_values = SCPI_InfiniiVision6000.query_ascii_values(
             ':MEASure:VRATio? %s,%s' % (channel_2, channel_1))
-        self.ratio_measurements.append(temp_values[0])
         temp_values2 = SCPI_InfiniiVision6000.query_ascii_values(
             ':MEASure:PHASe? %s,%s' % (channel_2, channel_1))
-        self.phase_measurements.append(temp_values2[0])
-        self.frequencies.append(freq)
+        if temp_values[0] < 1000000 and temp_values2[0] < 1000000:
+            self.ratio_measurements.append(temp_values[0])
+            self.phase_measurements.append(temp_values2[0])
+            self.frequencies.append(freq)

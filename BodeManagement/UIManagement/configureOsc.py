@@ -2,11 +2,11 @@ from enum import Enum
 
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
-
+import pyvisa as visa
 
 class UIConfigOsc(QMainWindow):
 
-    def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
+    def __init__(self, bode_manager, visa_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
         loadUi('BodeManagement/UIManagement/configureOsc.ui', self)
         self.setWindowTitle("Oscilloscope Configuration")
@@ -18,6 +18,12 @@ class UIConfigOsc(QMainWindow):
         self.probe_in = ProbeTypes.x1
         self.probe_out = ProbeTypes.x1
         self.bode_manager = bode_manager
+        self.visa_manager = visa_manager
+        rm = self.visa_manager.get_resource_manager()
+        instrument_list = self.visa_manager.get_list_of_detailed_instruments()
+
+        for instrument in instrument_list:
+            self.visaStringOsc.addItem(instrument.idnString)
 
     def back_action(self):
         self.bode_manager.show_prev_window()
@@ -25,7 +31,7 @@ class UIConfigOsc(QMainWindow):
     def continue_action(self):
         error = False
         # get visa string
-        self.visa_string = self.visaStringOsc.toPlainText()
+        self.visa_string = self.visa_manager.get_visa_from_idn(self.visaStringOsc.currentText())
 
         # get channels
         channel_in_text = str(self.channelInBox.currentText())

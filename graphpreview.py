@@ -57,9 +57,9 @@ class UIGraphPreview(QMainWindow):
     # mostrar; graph_widget: widget donde se añadirá el gráfico; color: color del gráfico.
     def __plot_graph__(self, x_values, y_values, graph_widget):
 
-        graph_widget.canvas.axes.plot(x_values,  # Función principal que setea los gráficos a escala
+        graph_widget.canvas.axes.scatter(x_values,  # Función principal que setea los gráficos a escala
                                       y_values,  # logarítmica con los valores indicados en los arrays.
-                                      color='b', label='Best objective value')
+                                      color='b')
         graph_widget.canvas.axes.set_xscale('log')
         graph_widget.canvas.axes.grid(True, which="both")
 
@@ -76,7 +76,7 @@ class UIGraphPreview(QMainWindow):
 
         folder_path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
         self.save_csv(folder_path, myData, "auto_bode")
-        self.errorLabel.setText("Mediciones guardadas.")
+        self.errorLabel.setText("File saved. Formar: freq, module, phase")
 
     def save_csv(self, folder_path, myData, name):
         i = 1

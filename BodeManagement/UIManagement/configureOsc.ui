@@ -56,16 +56,6 @@ color: rgb(255, 86, 56);</string>
      <string>VISA String</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="visaStringOsc">
-    <property name="geometry">
-     <rect>
-      <x>150</x>
-      <y>129</y>
-      <width>251</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
@@ -221,6 +211,16 @@ color: rgb(255, 86, 56);</string>
     </property>
     <property name="text">
      <string>BACK</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="visaStringOsc">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>130</y>
+      <width>251</width>
+      <height>31</height>
+     </rect>
     </property>
    </widget>
   </widget>
