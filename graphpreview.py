@@ -1,22 +1,22 @@
-import os
-from tkinter import filedialog
-
-import numpy
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import *
-import matplotlib as mpl
 import csv
+import os
+
+import matplotlib as mpl
+from PyQt5.QtWidgets import *
+from PyQt5.uic import loadUi
 
 
+# UIGraphPreview: Window which plots and shows the measures obtained in order to decide to save them or to start a
+# new measure.
 class UIGraphPreview(QMainWindow):
 
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
         loadUi('D:\PycharmProjects\TCVisa\graphpreview.ui', self)
         self.setWindowTitle("Graph Preview")
-        self.ModuleWidget = self.graphwidget  # Objeto de la clase GraphWidget
-        self.PhaseWidget = self.phaseGraph  # Objeto de la clase GraphWidget
+        self.ModuleWidget = self.graphwidget  # GraphWidget instance.
+        self.PhaseWidget = self.phaseGraph  # GraphWidget instance.
+        # Sets titles.
         self.ModuleWidget.title = "Module"
         self.PhaseWidget.title = "Phase"
         self.ModuleWidget.x_label = "f [Hz]"
@@ -25,19 +25,32 @@ class UIGraphPreview(QMainWindow):
         self.ModuleWidget.y_label = "|H| [dB]"
         self.ModuleWidget.canvas.axes.set_title(self.ModuleWidget.title)
         self.PhaseWidget.canvas.axes.set_title(self.PhaseWidget.title)
-        self.saveButton.clicked.connect(self.save_action)
         self.__fix_axes_titles_position__(self.ModuleWidget)
         self.__fix_axes_titles_position__(self.PhaseWidget)
+
+        self.saveButton.clicked.connect(self.save_action)
+        self.newBode.clicked.connect(self.new_bode)
+
         self.bode_manager = bode_manager
 
+    def new_bode(self):
+        self.close()
+        self.bode_manager.start_over("")
+
     def plot_window(self):
+        """
+        Plots the Bode graph received.
+        """
         self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.module,
                             self.ModuleWidget)
         self.__plot_graph__(self.bode_manager.bode.frequencies, self.bode_manager.bode.phase,
                             self.PhaseWidget)
 
-    # Funciones que configuran y muestran los titulos de los ejes.
     def __fix_axes_titles_position__(self, widget):
+        """
+        Axes titles configuration.
+        :param widget: Widget to edit the titles. PhaseWidget or ModuleWidget.
+        """
         self.__fix_y_title_position__(widget)
         self.__fix_x_title_position__(widget)
 
@@ -53,32 +66,44 @@ class UIGraphPreview(QMainWindow):
                                     ha='left', va='bottom',
                                     xycoords='axes fraction', textcoords='offset points', rotation=0)
 
-    # Función plot_graph. Se la llama de update_graph dibujar cada grafico.. Parametros: graph, valores del grafico a
-    # mostrar; graph_widget: widget donde se añadirá el gráfico; color: color del gráfico.
-    def __plot_graph__(self, x_values, y_values, graph_widget):
 
-        graph_widget.canvas.axes.scatter(x_values,  # Función principal que setea los gráficos a escala
-                                      y_values,  # logarítmica con los valores indicados en los arrays.
-                                      color='b')
+    def __plot_graph__(self, x_values, y_values, graph_widget):
+        """
+        Plots a graph in a graph widget with the values received. The plot is made in the form of a scatter graph.
+        :param x_values: x axes values to plot.
+        :param y_values: y axes values to plot.
+        :param graph_widget: widget to plot the graph in. PhaseWidget or ModuleWidget.
+        """
+        graph_widget.canvas.axes.scatter(x_values,
+                                         y_values,
+                                         color='b')
         graph_widget.canvas.axes.set_xscale('log')
         graph_widget.canvas.axes.grid(True, which="both")
 
-        graph_widget.canvas.draw()  # redibuja
+        graph_widget.canvas.draw()  # Redraws
 
     def save_action(self):
-
-        myData = [['freqs', 'amp', 'phase']]
+        """
+        Creates a .csv file with the measurements values and saves it at a selected directory.
+        """
+        my_data = [['freqs', 'amp', 'phase']] # List of the rows to save in the file.
 
         for i in range(0, len(self.bode_manager.bode.frequencies)):
-            myData.append([str(self.bode_manager.bode.frequencies[i]),
+            my_data.append([str(self.bode_manager.bode.frequencies[i]),
                            str(self.bode_manager.bode.module[i]),
                            str(self.bode_manager.bode.phase[i])])
 
         folder_path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        self.save_csv(folder_path, myData, "auto_bode")
-        self.errorLabel.setText("File saved. Formar: freq, module, phase")
+        self.__save_csv__(folder_path, my_data, "auto_bode")
+        self.errorLabel.setText("File saved. Format: freq, module, phase")
 
-    def save_csv(self, folder_path, myData, name):
+    def __save_csv__(self, folder_path, myData, name):
+        """
+        Finds the correct name for the file to be saved and saves it at the selected directory.
+        :param folder_path: Directory to save the file at.
+        :param myData: List of lists with the rows of values to save in the file.
+        :param name: Base name of the file.
+        """
         i = 1
         if os.path.isfile(folder_path + "/" + name + ".csv"):
             while os.path.isfile(folder_path + "/" + name + "(" + str(i) + ").csv"):

@@ -1,9 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
-from PyQt5.uic.properties import QtWidgets
 
 from BodeManagement.BodeConfiguration import BodeManager
-from graphpreview import UIGraphPreview
 
 
 class UIMainWindow(QMainWindow):

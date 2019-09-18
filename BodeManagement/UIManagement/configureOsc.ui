@@ -53,7 +53,7 @@ color: rgb(255, 86, 56);</string>
      </rect>
     </property>
     <property name="text">
-     <string>VISA String</string>
+     <string>Instrument</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_3">
@@ -102,7 +102,7 @@ color: rgb(255, 86, 56);</string>
    <widget class="QPushButton" name="continueButton">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>380</x>
       <y>390</y>
       <width>121</width>
       <height>51</height>
@@ -190,14 +190,17 @@ color: rgb(255, 86, 56);</string>
    <widget class="QLabel" name="errorLabel">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>30</x>
       <y>350</y>
-      <width>271</width>
-      <height>16</height>
+      <width>491</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
      <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QPushButton" name="backButton">

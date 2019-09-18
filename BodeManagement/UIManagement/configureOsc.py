@@ -2,11 +2,12 @@ from enum import Enum
 
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
-import pyvisa as visa
+
 
 class UIConfigOsc(QMainWindow):
 
-    def __init__(self, bode_manager, visa_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
+    def __init__(self, bode_manager,
+                 visa_manager):
         QMainWindow.__init__(self)
         loadUi('BodeManagement/UIManagement/configureOsc.ui', self)
         self.setWindowTitle("Oscilloscope Configuration")
@@ -19,9 +20,7 @@ class UIConfigOsc(QMainWindow):
         self.probe_out = ProbeTypes.x1
         self.bode_manager = bode_manager
         self.visa_manager = visa_manager
-        rm = self.visa_manager.get_resource_manager()
         instrument_list = self.visa_manager.get_list_of_detailed_instruments()
-
         for instrument in instrument_list:
             self.visaStringOsc.addItem(instrument.idnString)
 
@@ -30,10 +29,10 @@ class UIConfigOsc(QMainWindow):
 
     def continue_action(self):
         error = False
-        # get visa string
+        # Gets visa string from selected instrument.
         self.visa_string = self.visa_manager.get_visa_from_idn(self.visaStringOsc.currentText())
 
-        # get channels
+        # Gets selected channels
         channel_in_text = str(self.channelInBox.currentText())
         for channel in ChannelTypes:
             if channel_in_text == channel.value:
@@ -50,7 +49,7 @@ class UIConfigOsc(QMainWindow):
             error = True
             self.errorLabel.setText("In & Out channels can't be the same.")
 
-        # get probes
+        # Get selected probes
         if self.probeInCheck.isChecked():
             self.probe_in = ProbeTypes.x10
 
@@ -84,6 +83,3 @@ class ChannelTypes(Enum):
     channel3 = "CHANNEL3"
     channel4 = "CHANNEL4"
     none = "No Channel"
-
-
-

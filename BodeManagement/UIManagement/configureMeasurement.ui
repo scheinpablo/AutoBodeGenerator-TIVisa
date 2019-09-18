@@ -98,7 +98,7 @@ color: rgb(255, 86, 56);</string>
    <widget class="QPushButton" name="continueButton">
     <property name="geometry">
      <rect>
-      <x>410</x>
+      <x>390</x>
       <y>390</y>
       <width>121</width>
       <height>51</height>
@@ -150,7 +150,7 @@ color: rgb(255, 86, 56);</string>
      <number>100</number>
     </property>
     <property name="value">
-     <number>1000</number>
+     <number>300</number>
     </property>
    </widget>
    <widget class="QLabel" name="label_4">
@@ -175,11 +175,14 @@ color: rgb(255, 86, 56);</string>
       <height>31</height>
      </rect>
     </property>
+    <property name="decimals">
+     <number>2</number>
+    </property>
     <property name="maximum">
      <double>99999999.989999994635582</double>
     </property>
     <property name="value">
-     <double>10.500000000000000</double>
+     <double>11.000000000000000</double>
     </property>
    </widget>
    <widget class="QComboBox" name="measMultiplier">

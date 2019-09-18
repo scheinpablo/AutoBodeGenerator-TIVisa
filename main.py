@@ -6,7 +6,7 @@ from MainUI.mainWindow import UIMainWindow
 def start():
     app = QtWidgets.QApplication([])
     window = UIMainWindow()
-    window.show()  # Se muestra la ventana
+    window.show()
     app.exec()
 
 

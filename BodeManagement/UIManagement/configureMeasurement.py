@@ -6,7 +6,7 @@ from PyQt5.uic import loadUi
 
 class UIConfigMeas(QMainWindow):
 
-    def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
+    def __init__(self, bode_manager):
         QMainWindow.__init__(self)
         loadUi('BodeManagement/UIManagement/configureMeasurement.ui', self)
         self.setWindowTitle("Measurement Configuration")
@@ -31,13 +31,19 @@ class UIConfigMeas(QMainWindow):
         self.update_values()
 
     def update_values(self):
+        """
+        Updates default values depending on the type of measurement.
+        """
         if self.sweep_type == SweepTypes.linearSweep:
             self.measureSpinBox.setValue(100.00)
         elif self.sweep_type == SweepTypes.logarithmicSweep:
-            self.measureSpinBox.setValue(50.00)
+            self.measureSpinBox.setValue(20.00)
         self.update_labels()
 
     def update_labels(self):
+        """
+        Updates labels depending on the type of measurement.
+        """
         if self.sweep_type == SweepTypes.linearSweep:
             self.measureTitleLabel.setText("Measure Every")
             self.measure_every = self.measureSpinBox.value() * self.multipliers[self.measMultiplier.currentText()]
@@ -78,9 +84,19 @@ class UIConfigMeas(QMainWindow):
             self.bode_manager.show_next_window()
 
     def sweep_type_changed(self):
+        """
+        Updates ui components depending on the type of measurement.
+        """
         for sweep in SweepTypes:
             if self.sweepTypeBox.currentText() == sweep.value:
                 self.sweep_type = sweep
+                if sweep == SweepTypes.logarithmicSweep:
+                    self.measMultiplier.hide()
+                    self.measureSpinBox.setDecimals(0)
+                else:
+                    self.measMultiplier.show()
+                    self.measureSpinBox.setDecimals(2)
+
         self.update_values()
 
 

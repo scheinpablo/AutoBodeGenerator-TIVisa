@@ -1,6 +1,7 @@
-import numpy
-import pyvisa as visa
 import time
+
+import numpy
+
 from BodeManagement.UIManagement.configureMeasurement import UIConfigMeas, SweepTypes
 from BodeManagement.UIManagement.configureOsc import UIConfigOsc, ChannelTypes
 from BodeManagement.UIManagement.configureWaveGen import UIConfigWaveGen, WaveFormTypes
@@ -22,6 +23,7 @@ class BodeGraph:
         self.phase = phases
 
 
+# BodeManager: Manages the sequence of configuration views and commands sent to the instruments.
 class BodeManager:
     def __init__(self):
         # Bode points arrays
@@ -30,16 +32,32 @@ class BodeManager:
         self.phase_measurements = []
         self.ratio_measurements = []
         self.visa_manager = VisaManager()
+        # Windows
         self.config_osc_window = UIConfigOsc(self, self.visa_manager)
         self.config_wave_window = UIConfigWaveGen(self, self.visa_manager)
         self.config_meas_window = UIConfigMeas(self)
         self.window_sequence = [self.config_osc_window, self.config_wave_window, self.config_meas_window]
-        self.bode_configuration = BodeConfiguration()
         self.iterator = 0
+
+        self.bode_configuration = BodeConfiguration()
+
         self.window_sequence[self.iterator].show()
 
-    def show_next_window(self):
+    def start_over(self, error_msg=""):
+        """
+        Starts configuration window sequence again.
+        :param error_msg: Optional error message to be shown in the first window.
+        """
+        self.window_sequence[self.iterator].close()
+        self.iterator = 0
+        self.window_sequence[self.iterator].show()
+        self.window_sequence[self.iterator].errorLabel.setText(error_msg)
 
+    def show_next_window(self):
+        """
+        Shows the next window (if exists) in the configuration window sequence and closes the current one.
+        If the current window is the last one, it starts the Bode measurement and displays the results in a graph window.
+        """
         if self.iterator < (len(self.window_sequence) - 1):
             self.window_sequence[self.iterator].close()
             self.iterator += 1
@@ -52,12 +70,16 @@ class BodeManager:
             conf_wave = self.bode_configuration.wave_gen_config_params
             conf_meas = self.bode_configuration.measure_config_params
             self.bode = self.measure_bode(conf_osc, conf_wave, conf_meas)
-            self.window_sequence[self.iterator].close()
-            self.graph_prev_window = UIGraphPreview(self)
-            self.graph_prev_window.show()
-            self.graph_prev_window.plot_window()
+            if self.bode is not None:
+                self.window_sequence[self.iterator].close()
+                self.graph_prev_window = UIGraphPreview(self)
+                self.graph_prev_window.show()
+                self.graph_prev_window.plot_window()
 
     def show_prev_window(self):
+        """
+        Shows the previous window (if exists) in the configuration window sequence and closes the current one.
+        """
         if self.iterator > 0:
             self.window_sequence[self.iterator].close()
             self.iterator -= 1
@@ -66,6 +88,13 @@ class BodeManager:
             self.window_sequence[self.iterator].show()
 
     def measure_bode(self, conf_osc, conf_wave, conf_meas):
+        """
+        Controls the instruments with the params received in order to draw a Bode graph.
+        :param conf_osc: Oscilloscope configuration parameters. Dictionary.
+        :param conf_wave: Wave Generator configuration parameters. Dictionary.
+        :param conf_meas: Measurement configuration parameters. Dictionary.
+        :return: Bode Graph instance. None if error occurred.
+        """
         channel_1 = conf_osc["channelIn"]
         channel_2 = conf_osc["channelOut"]
         probe1 = conf_osc["probeIn"]
@@ -87,110 +116,120 @@ class BodeManager:
             if channel_2 == channel.value:
                 second_channel_n_ = i
             i += 1
+        try:
+            rm = self.visa_manager.get_resource_manager()
 
-        rm = self.visa_manager.get_resource_manager()
+            # Connection
+            SCPI_33220 = rm.open_resource(visa_wave_gen)
 
-        # Connection
-        SCPI_33220 = rm.open_resource(visa_wave_gen)
+            SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
 
-        SCPI_InfiniiVision6000 = rm.open_resource(visa_osc)
+            # Oscilloscope Configuration
+            SCPI_InfiniiVision6000.write('*RST')
+            # Channel probes, offsets and display activation
+            SCPI_InfiniiVision6000.write(':CHANnel%d:PROBe %s' % (first_channel_n_, probe1))
+            SCPI_InfiniiVision6000.write(':CHANnel%d:PROBe %s' % (second_channel_n_, probe2))
+            SCPI_InfiniiVision6000.write(':CHANnel%d:OFFSet %G' % (first_channel_n_, 0.0))
+            SCPI_InfiniiVision6000.write(':CHANnel%d:OFFSet %G' % (second_channel_n_, 0.0))
+            SCPI_InfiniiVision6000.write(':CHANnel%d:DISPlay %d' % (first_channel_n_, 1))
+            SCPI_InfiniiVision6000.write(':CHANnel%d:DISPlay %d' % (second_channel_n_, 1))
 
-        # Oscilloscope Configuration
-        SCPI_InfiniiVision6000.write('*RST')
-        # Channel probes, offsets and display activation
-        SCPI_InfiniiVision6000.write(':CHANnel%d:PROBe %s' % (first_channel_n_, probe1))
-        SCPI_InfiniiVision6000.write(':CHANnel%d:PROBe %s' % (second_channel_n_, probe2))
-        SCPI_InfiniiVision6000.write(':CHANnel%d:OFFSet %G' % (first_channel_n_, 0.0))
-        SCPI_InfiniiVision6000.write(':CHANnel%d:OFFSet %G' % (second_channel_n_, 0.0))
-        SCPI_InfiniiVision6000.write(':CHANnel%d:DISPlay %d' % (first_channel_n_, 1))
-        SCPI_InfiniiVision6000.write(':CHANnel%d:DISPlay %d' % (second_channel_n_, 1))
+            # Time and trigger
+            SCPI_InfiniiVision6000.write(':TIMebase:MODE %s' % ('MAIN'))
+            SCPI_InfiniiVision6000.write(':TRIGger:SWEep %s' % ('AUTO'))
+            SCPI_InfiniiVision6000.write(':TRIGger:EDGE:SOURce %s' % ('EXTernal'))
+            SCPI_InfiniiVision6000.write(':ACQuire:TYPE %s' % ('HRESolution'))
+            SCPI_InfiniiVision6000.write(':TIMebase:MAIN:DELay %G' % (0.0))
+            SCPI_InfiniiVision6000.write(':TRIGger:EDGE:LEVel %G V' % (0.1))
 
-        # Time and trigger
-        SCPI_InfiniiVision6000.write(':TIMebase:MODE %s' % ('MAIN'))
-        SCPI_InfiniiVision6000.write(':TRIGger:SWEep %s' % ('AUTO'))
-        SCPI_InfiniiVision6000.write(':TRIGger:EDGE:SOURce %s' % ('EXTernal'))
-        SCPI_InfiniiVision6000.write(':ACQuire:TYPE %s' % ('HRESolution'))
-        SCPI_InfiniiVision6000.write(':TIMebase:MAIN:DELay %G' % (0.0))
-        SCPI_InfiniiVision6000.write(':TRIGger:EDGE:LEVel %G V' % (0.1))
+            # Measurement activation
+            SCPI_InfiniiVision6000.write(':MEASure:PHASe %s,%s' % (channel_2, channel_1))
+            SCPI_InfiniiVision6000.write(':MEASure:VRATio %s,%s' % (channel_2, channel_1))
+            SCPI_InfiniiVision6000.write(':MEASure:VPP %s' % (channel_1))
+            SCPI_InfiniiVision6000.write(':MEASure:VPP %s' % (channel_2))
 
-        # Measurement activation
-        SCPI_InfiniiVision6000.write(':MEASure:PHASe %s,%s' % (channel_2, channel_1))
-        SCPI_InfiniiVision6000.write(':MEASure:VRATio %s,%s' % (channel_2, channel_1))
-        SCPI_InfiniiVision6000.write(':MEASure:VPP %s' % (channel_1))
-        SCPI_InfiniiVision6000.write(':MEASure:VPP %s' % (channel_2))
+            # Generator Configuration
+            SCPI_33220.write('*RST')
+            SCPI_33220.write(':OUTPut:LOAD %s' % ('INFinity'))
+            SCPI_33220.write(':OUTPut:STATe %d' % (1))
 
-        # Generator Configuration
-        SCPI_33220.write('*RST')
-        SCPI_33220.write(':OUTPut:LOAD %s' % ('INFinity'))
-        SCPI_33220.write(':OUTPut:STATe %d' % (1))
+            current_first_range = amplitude
+            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (first_channel_n_, current_first_range))
+            current_second_range = amplitude
+            SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (second_channel_n_, current_second_range))
 
-        current_first_range = amplitude
-        SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (first_channel_n_, current_first_range))
-        current_second_range = amplitude
-        SCPI_InfiniiVision6000.write(':CHANnel%d:RANGe %G' % (second_channel_n_, current_second_range))
-
-        if sweep_type == SweepTypes.linearSweep.value:
-            for freq in numpy.arange(start_freq, stop_freq, measure_tick):
-                # Signal application
-                self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2, current_first_range,
-                             current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
-                             wave_form)
-        elif sweep_type == SweepTypes.logarithmicSweep.value:
-            base = 1
-            inibase = base
-            mult = 10
-            iniexp = 0
-
-            # buscar base inicial mas cercana a startfreq
-            while base < start_freq:
-                base *= mult
-                iniexp += 1
+            if sweep_type == SweepTypes.linearSweep.value:
+                for freq in numpy.arange(start_freq, stop_freq, measure_tick):
+                    # Signal application
+                    self.__measure__(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                     current_first_range,
+                                     current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
+                                     wave_form)
+            elif sweep_type == SweepTypes.logarithmicSweep.value:
+                base = 1
                 inibase = base
+                mult = 10
+                iniexp = 0
 
-            endexp = 0
-            # buscar base final mas cercana a stopfreq
-            base = 1
-            endbase = base
-            while base < stop_freq:
+                # buscar base inicial mas cercana a startfreq
+                while base < start_freq:
+                    base *= mult
+                    iniexp += 1
+                    inibase = base
+
+                endexp = 0
+                # buscar base final mas cercana a stopfreq
+                base = 1
                 endbase = base
-                base *= mult
-                endexp += 1
-            endexp -= 1
+                while base < stop_freq:
+                    endbase = base
+                    base *= mult
+                    endexp += 1
+                endexp -= 1
 
-            # medir entre atartfrq y base inicial mas cercana
-            if inibase > start_freq:
-                for freq in range(start_freq, inibase, int((inibase - start_freq) / int(measure_tick))):
-                    self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
-                                 current_first_range,
-                                 current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
-                                 wave_form)
+                # medir entre atartfrq y base inicial mas cercana
+                if inibase > start_freq:
+                    for freq in range(start_freq, inibase, int((inibase - start_freq) / int(measure_tick))):
+                        self.__measure__(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                         current_first_range,
+                                         current_second_range, establishment_time, first_channel_n_, freq,
+                                         second_channel_n_,
+                                         wave_form)
 
-            # medir entre base inicial y base final
-            while iniexp < endexp:
-                for freq in numpy.logspace(iniexp, iniexp + 1, int(measure_tick), base=10, dtype='int'):
-                    self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
-                                 current_first_range,
-                                 current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
-                                 wave_form)
-                iniexp += 1
+                # medir entre base inicial y base final
+                while iniexp < endexp:
+                    for freq in numpy.logspace(iniexp, iniexp + 1, int(measure_tick), base=10, dtype='int'):
+                        self.__measure__(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                         current_first_range,
+                                         current_second_range, establishment_time, first_channel_n_, freq,
+                                         second_channel_n_,
+                                         wave_form)
+                    iniexp += 1
 
-            # medir entre base final mas cercana y stop freq
+                # medir entre base final mas cercana y stop freq
 
-            if endbase < stop_freq:
-                for freq in range(endbase, stop_freq, int((stop_freq - endbase) / int(measure_tick))):
-                    self.measure(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
-                                 current_first_range,
-                                 current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_,
-                                 wave_form)
+                if endbase < stop_freq:
+                    for freq in range(endbase, stop_freq, int((stop_freq - endbase) / int(measure_tick))):
+                        self.__measure__(SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2,
+                                         current_first_range,
+                                         current_second_range, establishment_time, first_channel_n_, freq,
+                                         second_channel_n_,
+                                         wave_form)
 
-        SCPI_InfiniiVision6000.close()
-        SCPI_33220.close()
-        rm.close()
-        return BodeGraph(self.frequencies, self.ratio_measurements, self.phase_measurements)
+            SCPI_InfiniiVision6000.close()
+            SCPI_33220.close()
+            rm.close()
+            return BodeGraph(self.frequencies, self.ratio_measurements, self.phase_measurements)
+        except:
+            self.start_over("An error has occurred. Reconfigure params")
+            return None
 
-    def measure(self, SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2, current_first_range,
-                current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_, wave_form):
-
+    def __measure__(self, SCPI_33220, SCPI_InfiniiVision6000, amplitude, channel_1, channel_2, current_first_range,
+                    current_second_range, establishment_time, first_channel_n_, freq, second_channel_n_, wave_form):
+        """
+        Internal function used by measure_bode.
+        Applies wave form, configures oscilloscope scales and measures ratio and phase.
+        """
         if wave_form == WaveFormTypes.sineWave.value:
             SCPI_33220.write(':APPLy:SINusoid %G,%G,%G' % (freq, amplitude, 0.0))
         elif wave_form == WaveFormTypes.squareWave.value:

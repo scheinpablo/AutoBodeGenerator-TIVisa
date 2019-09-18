@@ -49,7 +49,7 @@ color: rgb(255, 86, 56);</string>
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>400</x>
+      <x>190</x>
       <y>600</y>
       <width>141</width>
       <height>51</height>
@@ -93,6 +93,19 @@ color: rgb(255, 86, 56);</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="newBode">
+    <property name="geometry">
+     <rect>
+      <x>620</x>
+      <y>600</y>
+      <width>141</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>NEW BODE</string>
     </property>
    </widget>
   </widget>
