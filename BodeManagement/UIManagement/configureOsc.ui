@@ -203,19 +203,6 @@ color: rgb(255, 86, 56);</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QPushButton" name="backButton">
-    <property name="geometry">
-     <rect>
-      <x>40</x>
-      <y>390</y>
-      <width>121</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>BACK</string>
-    </property>
-   </widget>
    <widget class="QComboBox" name="visaStringOsc">
     <property name="geometry">
      <rect>

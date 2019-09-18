@@ -12,7 +12,6 @@ class UIConfigOsc(QMainWindow):
         loadUi('BodeManagement/UIManagement/configureOsc.ui', self)
         self.setWindowTitle("Oscilloscope Configuration")
         self.continueButton.clicked.connect(self.continue_action)
-        self.backButton.clicked.connect(self.back_action)
         self.visa_string = ""
         self.channel_in = ChannelTypes.none
         self.channel_out = ChannelTypes.none
@@ -23,9 +22,6 @@ class UIConfigOsc(QMainWindow):
         instrument_list = self.visa_manager.get_list_of_detailed_instruments()
         for instrument in instrument_list:
             self.visaStringOsc.addItem(instrument.idnString)
-
-    def back_action(self):
-        self.bode_manager.show_prev_window()
 
     def continue_action(self):
         error = False
