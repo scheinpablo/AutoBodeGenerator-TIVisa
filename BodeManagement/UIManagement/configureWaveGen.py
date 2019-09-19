@@ -74,6 +74,4 @@ class UIConfigWaveGen(QMainWindow):
 class WaveFormTypes(Enum):
     """ Wave Form Types """
     sineWave = "Sine Wave"
-    squareWave = "Square Wave"
-    triangleWave = "Triangle Wave"
     none = "No Wave"

@@ -83,16 +83,6 @@ color: rgb(255, 86, 56);</string>
       <string>Sine Wave</string>
      </property>
     </item>
-    <item>
-     <property name="text">
-      <string>Square Wave</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Triangle Wave</string>
-     </property>
-    </item>
    </widget>
    <widget class="QLabel" name="label_4">
     <property name="geometry">

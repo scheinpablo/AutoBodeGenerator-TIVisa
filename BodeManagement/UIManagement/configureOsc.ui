@@ -217,7 +217,7 @@ color: rgb(255, 86, 56);</string>
     <property name="geometry">
      <rect>
       <x>420</x>
-      <y>290</y>
+      <y>270</y>
       <width>101</width>
       <height>31</height>
      </rect>
@@ -355,6 +355,19 @@ color: rgb(255, 86, 56);</string>
     </property>
     <property name="text">
      <string>V</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="highFreqBox">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>300</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>HF Reject</string>
     </property>
    </widget>
   </widget>

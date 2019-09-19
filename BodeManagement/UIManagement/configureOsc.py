@@ -18,8 +18,9 @@ class UIConfigOsc(QMainWindow):
         self.channel_out = ChannelTypes.none
         self.acquire_type = AcquireTypes.none
         self.trigger_source = TriggerSources.none
-        self.probe_in = ProbeTypes.x1
-        self.probe_out = ProbeTypes.x1
+        self.probe_in = ProbeTypes.x1.value[1]
+        self.probe_out = ProbeTypes.x1.value[1]
+        self.high_freq_reject = False
         self.noise_reject = False
         self.bode_manager = bode_manager
         self.visa_manager = visa_manager
@@ -71,15 +72,20 @@ class UIConfigOsc(QMainWindow):
 
         # Get selected probes
         if self.probeInCheck.isChecked():
-            self.probe_in = ProbeTypes.x10
+            self.probe_in = ProbeTypes.x10.value[1]
 
         if self.probeOutCheck.isChecked():
-            self.probe_out = ProbeTypes.x10
+            self.probe_out = ProbeTypes.x10.value[1]
 
         if self.noiseRejectBox.isChecked():
             self.noise_reject = True
         else:
             self.noise_reject = False
+
+        if self.highFreqBox.isChecked():
+            self.high_freq_reject = True
+        else:
+            self.high_freq_reject = False
 
         self.trigger_level = round(self.triggerLevelBox.value(), 1)
 
@@ -95,7 +101,8 @@ class UIConfigOsc(QMainWindow):
                 "noiseReject": self.noise_reject,
                 "acquireType": self.acquire_type,
                 "triggerSource": self.trigger_source,
-                "triggerLevel": self.trigger_level
+                "triggerLevel": self.trigger_level,
+                "highFreqReject": self.high_freq_reject
             }
             self.bode_manager.bode_configuration.osc_config_params = oscilloscope_configuration
             self.bode_manager.show_next_window()
@@ -103,8 +110,8 @@ class UIConfigOsc(QMainWindow):
 
 class ProbeTypes(Enum):
     """ ProbeTypes """
-    x1 = "X1"
-    x10 = "X10"
+    x1 = ["X1",1]
+    x10 = ["X10",10]
 
 
 class ChannelTypes(Enum):
