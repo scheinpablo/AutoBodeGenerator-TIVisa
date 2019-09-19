@@ -12,7 +12,7 @@ class UIGraphPreview(QMainWindow):
 
     def __init__(self, bode_manager):  # Conecta los componentes del .ui realizado en QT con el programa en python
         QMainWindow.__init__(self)
-        loadUi('D:\PycharmProjects\TCVisa\graphpreview.ui', self)
+        loadUi('graphpreview.ui', self)
         self.setWindowTitle("Graph Preview")
         self.ModuleWidget = self.graphwidget  # GraphWidget instance.
         self.PhaseWidget = self.phaseGraph  # GraphWidget instance.
