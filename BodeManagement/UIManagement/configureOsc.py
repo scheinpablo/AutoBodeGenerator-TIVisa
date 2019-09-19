@@ -14,9 +14,13 @@ class UIConfigOsc(QMainWindow):
         self.continueButton.clicked.connect(self.continue_action)
         self.visa_string = ""
         self.channel_in = ChannelTypes.none
+        self.trigger_level = 0.1
         self.channel_out = ChannelTypes.none
+        self.acquire_type = AcquireTypes.none
+        self.trigger_source = TriggerSources.none
         self.probe_in = ProbeTypes.x1
         self.probe_out = ProbeTypes.x1
+        self.noise_reject = False
         self.bode_manager = bode_manager
         self.visa_manager = visa_manager
         instrument_list = self.visa_manager.get_list_of_detailed_instruments()
@@ -27,6 +31,26 @@ class UIConfigOsc(QMainWindow):
         error = False
         # Gets visa string from selected instrument.
         self.visa_string = self.visa_manager.get_visa_from_idn(self.visaStringOsc.currentText())
+
+        # Gets selected acquire mode
+        acquire_type_text = str(self.acquireBox.currentText())
+        for acquire_types in AcquireTypes:
+            if acquire_type_text == acquire_types.value[0]:
+                self.acquire_type = acquire_types.value[1]
+
+        if self.acquire_type == ChannelTypes.none.value[0]:
+            error = True
+            self.errorLabel.setText("Select a valid acquire type.")
+
+        # Gets selected trigger source
+        trigger_source_text = str(self.triggerSourceBox.currentText())
+        for trigger in TriggerSources:
+            if trigger_source_text == trigger.value[0]:
+                self.trigger_source = trigger.value[1]
+
+        if self.trigger_source == TriggerSources.none.value[0]:
+            error = True
+            self.errorLabel.setText("Select a valid trigger source.")
 
         # Gets selected channels
         channel_in_text = str(self.channelInBox.currentText())
@@ -52,6 +76,13 @@ class UIConfigOsc(QMainWindow):
         if self.probeOutCheck.isChecked():
             self.probe_out = ProbeTypes.x10
 
+        if self.noiseRejectBox.isChecked():
+            self.noise_reject = True
+        else:
+            self.noise_reject = False
+
+        self.trigger_level = round(self.triggerLevelBox.value(), 1)
+
         if not error:
             self.errorLabel.setText("")
             self.close()
@@ -61,6 +92,10 @@ class UIConfigOsc(QMainWindow):
                 "channelOut": self.channel_out,
                 "probeIn": self.probe_in,
                 "probeOut": self.probe_out,
+                "noiseReject": self.noise_reject,
+                "acquireType": self.acquire_type,
+                "triggerSource": self.trigger_source,
+                "triggerLevel": self.trigger_level
             }
             self.bode_manager.bode_configuration.osc_config_params = oscilloscope_configuration
             self.bode_manager.show_next_window()
@@ -79,3 +114,23 @@ class ChannelTypes(Enum):
     channel3 = "CHANNEL3"
     channel4 = "CHANNEL4"
     none = "No Channel"
+
+
+class AcquireTypes(Enum):
+    """ AcquireTypes"""
+    normal = ["NORMAL", "NORMal"]
+    peak = ["PEAK", "PEAK"]
+    average = ["AVERAGE", "AVERage"]
+    high_res = ["HIGH RESOLUTION", "HRESolution"]
+    none = ["No Channel", "No Channel"]
+
+
+class TriggerSources(Enum):
+    """TriggerSources"""
+    channel1 = ["CHANNEL1", "CHANnel1"]
+    channel2 = ["CHANNEL2", "CHANnel2"]
+    channel3 = ["CHANNEL3", "CHANnel3"]
+    channel4 = ["CHANNEL4", "CHANnel4"]
+    external = ["EXTERNAL", "EXTernal"]
+    line = ["LINE", "LINE"]
+    none = ["No Source", "No Source"]
